@@ -1,0 +1,33 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+description = "Template for new Rust web service"
+
+[package]
+name = "service-starter-rs"
+version = "0.1.0"
+edition = "2021"
+description = "test"
+
+[workspace]
+members = []
+
+[features]
+default = []
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace.dependencies]
+actix-web = "4.3.1"
+diesel = { version = "2.1.0", features = ["postgres", "r2d2"] }
+reqwest = "0.11.18"
+serde = "1.0.164"
+serde_json = "1.0.97"
+
+[dependencies]
+actix-web = { workspace = true }
+diesel = { workspace = true }
+dotenv = "0.15.0"
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
