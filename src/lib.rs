@@ -1,28 +1,39 @@
-use actix_web::{App, HttpServer};
 use actix_web::web::Data;
+use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use diesel::{prelude::*, r2d2};
-use std::{env};
-use dotenv::dotenv;
+use std::env;
+use tracing;
+use tracing_actix_web::TracingLogger;
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
+use tracing_subscriber::filter::EnvFilter;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::Registry;
 
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
 struct AppState {
-    pub connection: DbPool
+    pub connection: DbPool,
+}
+
+#[get("/")]
+async fn hello(data: web::Data<AppState>) -> impl Responder {
+    HttpResponse::Ok().body("hello world")
 }
 
 pub async fn service_init() -> std::io::Result<()> {
-    dotenv().ok();
+    init_telemetry();
     let db_pool = build_db_pool();
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(AppState {
-                connection: db_pool.clone()
+                connection: db_pool.clone(),
             }))
+            .wrap(TracingLogger::default())
+            .service(hello)
     })
-        .bind("127.0.0.1:8080")?
-        .run()
-        .await
-
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
 }
 
 fn build_db_pool() -> DbPool {
@@ -31,4 +42,19 @@ fn build_db_pool() -> DbPool {
     r2d2::Pool::builder()
         .build(manager)
         .expect("Db URL not valid")
+}
+
+fn init_telemetry() {
+    let app_name = "service-starter-rs";
+
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or(EnvFilter::new("info"));
+
+    let formatting_layer = BunyanFormattingLayer::new(app_name.into(), std::io::stdout);
+
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(JsonStorageLayer)
+        .with(formatting_layer);
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("Failed to install 'tracing' subscriber")
 }
