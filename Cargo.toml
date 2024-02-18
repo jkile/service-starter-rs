@@ -12,6 +12,7 @@ anyhow = { version = "1.0.75" }
 axum = { version = "0.7.4", features = ["macros"] }
 bytes = { version = "1.5.0", features = ["serde"] }
 dotenvy = { version = "0.15.7" }
+lambda_http = { version = "0.9.3" }
 notify = { version = "6.1.1" }
 persistence = { path = "./persistence" }
 serde = { version = "1.0.196", features = ["derive"] }
@@ -35,6 +36,7 @@ axum = { workspace = true }
 bytes = { workspace = true }
 controllers = { path = "./controllers" }
 dotenvy = { workspace = true }
+lambda_http = { workspace = true }
 notify = { workspace = true }
 persistence = { workspace = true }
 serde = { workspace = true }

@@ -13,7 +13,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), lambda_http::Error> {
     dotenv().expect(".env file not found");
     std::env::set_var("RUST_LOG", std::env::var("RUST_LOG")?);
     std::env::set_var("DATABASE_URL", std::env::var("DATABASE_URL")?);
@@ -71,13 +71,12 @@ async fn main() -> anyhow::Result<()> {
         )
         .layer(live_reload);
 
-    let port = 8080_u16;
-    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
+    // let port = 8080_u16;
+    // let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
 
-    info!("Router initialized, now listening on port {}", port);
+    //info!("Router initialized, now listening on port {}", port);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, router).await.unwrap();
-
-    Ok(())
+    //let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    // axum::serve(listener, router).await.unwrap();
+    lambda_http::run(router).await
 }
