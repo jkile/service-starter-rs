@@ -7,8 +7,10 @@ use tower_http::classify::ServerErrorsFailureClass;
 use tower_http::trace::TraceLayer;
 use tower_livereload::LiveReloadLayer;
 use tracing::info;
+use tracing::Level;
 use tracing::Span;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -32,12 +34,26 @@ async fn main() -> anyhow::Result<()> {
         .with_state(db)
         .layer(
             TraceLayer::new_for_http()
-                .make_span_with(|_request: &Request<_>| tracing::debug_span!("http-request"))
+                .make_span_with(|request: &Request<_>| {
+                    let request_id = Uuid::new_v4();
+                    tracing::span!(
+                        Level::INFO,
+                        "http-request",
+                        method = tracing::field::display(request.method()),
+                        uri = tracing::field::display(request.uri().path()),
+                        version = tracing::field::debug(request.version()),
+                        request_id = tracing::field::display(request_id)
+                    )
+                })
                 .on_request(|request: &Request<_>, _span: &Span| {
                     tracing::info!("started {} {}", request.method(), request.uri().path())
                 })
-                .on_response(|_response: &Response<_>, latency: Duration, _span: &Span| {
-                    tracing::info!("response generated in {:?}", latency)
+                .on_response(|response: &Response<_>, latency: Duration, _span: &Span| {
+                    tracing::info!(
+                        "response generated in {:?} with response code: {:?}",
+                        latency,
+                        response.status()
+                    )
                 })
                 .on_body_chunk(|chunk: &Bytes, _latency: Duration, _span: &Span| {
                     tracing::debug!("sending {} bytes", chunk.len())

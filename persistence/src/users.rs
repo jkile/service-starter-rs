@@ -11,7 +11,7 @@ pub trait UsersTable {
 impl UsersTable for Db {
     #[instrument]
     async fn get_user(&self, user_id: UserId) -> Result<User, sqlx::Error> {
-        let row = sqlx::query_as::<_, User>("SELECT * FROM users WHERE users.id = ?")
+        let row = sqlx::query_as::<_, User>("SELECT * FROM users WHERE users.id = $1")
             .bind(user_id)
             .fetch_one(&self.conn_pool)
             .await;

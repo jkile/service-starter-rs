@@ -6,7 +6,6 @@ use axum::{
 use models::users::{User, UserId};
 use persistence::Db;
 use services::user_service::UserService;
-use tracing::instrument;
 use utils::error::ApplicationError;
 
 pub struct UsersController {}
@@ -16,7 +15,6 @@ impl UsersController {
         Router::new().route("/:id", get(Self::get_user))
     }
 
-    #[instrument(level = "info")]
     async fn get_user(
         State(db): State<Db>,
         Path(id): Path<UserId>,
