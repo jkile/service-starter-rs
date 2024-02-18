@@ -1,0 +1,13 @@
+
+/target
+**/.env
+
+# flyctl launch added from infra/.gitignore
+infra/**/*.js
+!infra/**/jest.config.js
+infra/**/*.d.ts
+infra/**/node_modules
+
+# CDK asset staging directory
+infra/**/.cdk.staging
+infra/**/cdk.out
