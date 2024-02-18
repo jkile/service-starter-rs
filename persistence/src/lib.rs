@@ -1,14 +1,23 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use std::time::Duration;
+
+pub mod users;
+
+#[derive(Debug, Clone)]
+pub struct Db {
+    pub conn_pool: Pool<Postgres>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+impl Db {
+    pub async fn new() -> Db {
+        let db_connection_str = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://postgres:password@localhost:5432".to_string());
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .acquire_timeout(Duration::from_secs(3))
+            .connect(&db_connection_str)
+            .await
+            .expect("connection to database failed");
+        Db { conn_pool: pool }
     }
 }

@@ -5,7 +5,7 @@ edition = "2021"
 
 [workspace]
 resolver = "2"
-members = ["controllers", "models", "persistence", "services"]
+members = ["controllers", "models", "persistence", "services", "utils"]
 
 [workspace.dependencies]
 anyhow = { version = "1.0.75" }
@@ -13,8 +13,10 @@ axum = { version = "0.7.4", features = ["macros"] }
 bytes = { version = "1.5.0", features = ["serde"] }
 dotenvy = { version = "0.15.7" }
 notify = { version = "6.1.1" }
+persistence = { path = "./persistence" }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = { version = "1.0.113" }
+sqlx = { version = "0.7.3", features = ["runtime-tokio-rustls", "postgres"] }
 tokio = { version = "1.32.0", features = ["full"] }
 tower = { version = "0.4.13" }
 tower-http = { version = "0.5.1", features = ["fs", "trace"] }
@@ -29,8 +31,10 @@ bytes = { workspace = true }
 controllers = { path = "./controllers" }
 dotenvy = { workspace = true }
 notify = { workspace = true }
+persistence = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sqlx = { workspace = true }
 tokio = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }

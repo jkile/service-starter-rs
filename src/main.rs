@@ -14,6 +14,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 async fn main() -> anyhow::Result<()> {
     dotenv().expect(".env file not found");
     std::env::set_var("RUST_LOG", std::env::var("RUST_LOG")?);
+    std::env::set_var("DATABASE_URL", std::env::var("DATABASE_URL")?);
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -24,9 +25,11 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Initializing router...");
 
+    let db = persistence::Db::new().await;
     let live_reload = LiveReloadLayer::new();
     let router = Router::new()
         .nest("/api", Controllers::collect_routes())
+        .with_state(db)
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|_request: &Request<_>| tracing::debug_span!("http-request"))
