@@ -1,5 +1,6 @@
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::time::Duration;
+use tracing::instrument;
 
 pub mod users;
 
@@ -9,9 +10,11 @@ pub struct Db {
 }
 
 impl Db {
+    #[instrument]
     pub async fn new() -> Db {
-        let db_connection_str = std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgres://postgres:password@localhost:5432".to_string());
+        let db_connection_str = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://jakekile:password@localhost:5432/jakekile".to_string()
+        });
         let pool = PgPoolOptions::new()
             .max_connections(5)
             .acquire_timeout(Duration::from_secs(3))

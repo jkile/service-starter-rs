@@ -14,9 +14,7 @@ use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenv().expect(".env file not found");
-    std::env::set_var("RUST_LOG", std::env::var("RUST_LOG")?);
-    std::env::set_var("DATABASE_URL", std::env::var("DATABASE_URL")?);
+    //dotenv().expect(".env file not found");
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
