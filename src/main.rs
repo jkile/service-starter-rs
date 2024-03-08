@@ -1,6 +1,8 @@
+use axum::http::Method;
 use axum::{extract::Request, http::HeaderMap, response::Response, Router};
 use bytes::Bytes;
 use controllers;
+use tower_http::cors::{Any, CorsLayer};
 //use dotenvy::dotenv;
 use std::time::Duration;
 use tower_http::classify::ServerErrorsFailureClass;
@@ -25,11 +27,16 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Initializing router...");
 
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_origin(Any);
+
     let db = persistence::Db::new().await;
     let live_reload = LiveReloadLayer::new();
     let router = Router::new()
         .nest("/api", controllers::collect_routes())
         .with_state(db)
+        .layer(cors)
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|request: &Request<_>| {
@@ -40,6 +47,7 @@ async fn main() -> anyhow::Result<()> {
                         method = tracing::field::display(request.method()),
                         uri = tracing::field::display(request.uri().path()),
                         version = tracing::field::debug(request.version()),
+                        headers = tracing::field::debug(request.headers()),
                         request_id = tracing::field::display(request_id)
                     )
                 })

@@ -21,6 +21,11 @@ impl Db {
             .connect(&db_connection_str)
             .await
             .expect("connection to database failed");
+
+        sqlx::migrate!()
+            .run(&pool)
+            .await
+            .expect("SQL migration failed");
         Db { conn_pool: pool }
     }
 }

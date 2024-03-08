@@ -4,9 +4,9 @@ use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, FromRow)]
 pub struct User {
-    id: UserId,
-    username: Username,
-    password: UserPassword,
+    pub id: UserId,
+    pub username: Username,
+    pub password: UserPassword,
 }
 
 pub type UserId = Uuid;

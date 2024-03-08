@@ -23,7 +23,7 @@ sqlx = { version = "0.7.3", features = [
 ] }
 tokio = { version = "1.32.0", features = ["full"] }
 tower = { version = "0.4.13" }
-tower-http = { version = "0.5.1", features = ["fs", "trace"] }
+tower-http = { version = "0.5.1", features = ["fs", "trace", "cors"] }
 tower-livereload = { version = "0.9.1" }
 tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
