@@ -1,7 +1,7 @@
 use axum::{extract::Request, http::HeaderMap, response::Response, Router};
 use bytes::Bytes;
-use controllers::Controllers;
-use dotenvy::dotenv;
+use controllers;
+//use dotenvy::dotenv;
 use std::time::Duration;
 use tower_http::classify::ServerErrorsFailureClass;
 use tower_http::trace::TraceLayer;
@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     let db = persistence::Db::new().await;
     let live_reload = LiveReloadLayer::new();
     let router = Router::new()
-        .nest("/api", Controllers::collect_routes())
+        .nest("/api", controllers::collect_routes())
         .with_state(db)
         .layer(
             TraceLayer::new_for_http()

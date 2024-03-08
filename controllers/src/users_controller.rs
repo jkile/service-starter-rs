@@ -5,21 +5,17 @@ use axum::{
 };
 use models::users::{User, UserId};
 use persistence::Db;
-use services::user_service::UserService;
+use services::user_service;
 use utils::error::ApplicationError;
 
-pub struct UsersController {}
+pub fn collect_routes() -> Router<Db> {
+    Router::new().route("/:id", get(get_user))
+}
 
-impl UsersController {
-    pub fn collect_routes() -> Router<Db> {
-        Router::new().route("/:id", get(Self::get_user))
-    }
-
-    async fn get_user(
-        State(db): State<Db>,
-        Path(id): Path<UserId>,
-    ) -> Result<Json<User>, ApplicationError> {
-        let user = UserService::get_user(db, id).await?;
-        Ok(Json(user))
-    }
+async fn get_user(
+    State(db): State<Db>,
+    Path(id): Path<UserId>,
+) -> Result<Json<User>, ApplicationError> {
+    let user = user_service::get_user(db, id).await?;
+    Ok(Json(user))
 }
