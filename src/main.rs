@@ -1,11 +1,11 @@
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::http::Method;
 use axum::{extract::Request, http::HeaderMap, response::Response, Router};
 use bytes::Bytes;
 use controllers;
-use tower_http::cors::{Any, CorsLayer};
-//use dotenvy::dotenv;
 use std::time::Duration;
 use tower_http::classify::ServerErrorsFailureClass;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tower_livereload::LiveReloadLayer;
 use tracing::info;
@@ -16,7 +16,6 @@ use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    //dotenv().expect(".env file not found");
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -29,7 +28,8 @@ async fn main() -> anyhow::Result<()> {
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
-        .allow_origin(Any);
+        .allow_origin(Any)
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE]);
 
     let db = persistence::Db::new().await;
     let live_reload = LiveReloadLayer::new();
