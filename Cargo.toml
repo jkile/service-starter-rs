@@ -12,8 +12,12 @@ anyhow = { version = "1.0.75" }
 axum = { version = "0.7.4", features = ["macros"] }
 bytes = { version = "1.5.0", features = ["serde"] }
 dotenvy = { version = "0.15.7" }
+http = { version = "1.0.0" }
+futures-util = { version = "0.3.30" }
+jsonwebtoken = { version = "9.0" }
 notify = { version = "6.1.1" }
 persistence = { path = "./persistence" }
+reqwest = { version = "0.11.25", features = ["json"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = { version = "1.0.113" }
 sqlx = { version = "0.7.3", features = [
@@ -21,10 +25,16 @@ sqlx = { version = "0.7.3", features = [
     "postgres",
     "uuid",
 ] }
+svix = { version = "1.20.0" }
 tokio = { version = "1.32.0", features = ["full"] }
 tower = { version = "0.4.13" }
-tower-http = { version = "0.5.1", features = ["fs", "trace", "cors"] }
-tower-livereload = { version = "0.9.1" }
+tower-http = { version = "0.5.1", features = [
+    "auth",
+    "fs",
+    "trace",
+    "cors",
+    "compression-gzip",
+] }
 tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
@@ -35,15 +45,17 @@ axum = { workspace = true }
 bytes = { workspace = true }
 controllers = { path = "./controllers" }
 dotenvy = { workspace = true }
+models = { path = "./models" }
 notify = { workspace = true }
 persistence = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
+svix = { workspace = true }
 tokio = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
-tower-livereload = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+utils = { path = "./utils" }
 uuid = { workspace = true }

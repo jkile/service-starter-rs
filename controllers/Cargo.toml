@@ -13,7 +13,10 @@ axum = { workspace = true }
 models = { path = "../models" }
 persistence = { path = "../persistence" }
 tracing = { workspace = true }
+tower-http = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 services = { path = "../services" }
 sqlx = { workspace = true }
+svix = { workspace = true }
 utils = { path = "../utils" }

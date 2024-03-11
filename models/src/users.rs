@@ -6,19 +6,19 @@ use uuid::Uuid;
 pub struct User {
     pub id: UserId,
     pub username: Username,
-    pub password: UserPassword,
+}
+
+#[derive(Debug, Deserialize, Serialize, FromRow)]
+pub struct SessionToken {
+    pub session_token: String,
+    pub user_id: UserId,
 }
 
 pub type UserId = Uuid;
 pub type Username = String;
-pub type UserPassword = String;
 
 impl User {
-    pub fn new(id: UserId, username: Username, password: UserPassword) -> User {
-        User {
-            id,
-            username,
-            password,
-        }
+    pub fn new(id: UserId, username: Username) -> User {
+        User { id, username }
     }
 }

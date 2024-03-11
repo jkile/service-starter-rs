@@ -1,5 +1,5 @@
-use models::users::{User, UserId};
-use persistence::{users::UsersTable, Db};
+use models::users::{SessionToken, User, UserId};
+use persistence::{sessions::SessionsTable, users::UsersTable, Db};
 use tracing::error;
 use utils::error::ApplicationError;
 
@@ -19,7 +19,18 @@ pub async fn create_user(db: Db, user: User) -> Result<User, ApplicationError> {
     match created_user {
         Ok(user) => Ok(user),
         Err(e) => {
-            error!("failed to create entry is users table: {}", e);
+            error!("failed to create entry in users table: {}", e);
+            Err(ApplicationError::FailureCreatingResource(e))
+        }
+    }
+}
+
+pub async fn create_session(db: Db, user_id: UserId) -> Result<SessionToken, ApplicationError> {
+    let session = db.new_session("test".to_string(), user_id).await;
+    match session {
+        Ok(session) => Ok(session),
+        Err(e) => {
+            error!("failed to create entry in sessions table: {}", e);
             Err(ApplicationError::FailureCreatingResource(e))
         }
     }

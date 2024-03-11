@@ -1,5 +1,4 @@
 use models::users::{User, UserId};
-use sqlx::{Error, FromRow};
 use tracing::instrument;
 
 use crate::Db;
@@ -22,13 +21,12 @@ impl UsersTable for Db {
     #[instrument]
     async fn create_user(&self, user: User) -> Result<User, sqlx::Error> {
         let user = sqlx::query_as::<_, User>(
-            "INSERT INTO users (id, username, password)
-            VALUES ($1, $2, $3)
-            RETURNING id, username, password",
+            "INSERT INTO users (id, username)
+            VALUES ($1, $2)
+            RETURNING id, username",
         )
         .bind(user.id)
         .bind(user.username)
-        .bind(user.password)
         .fetch_one(&self.conn_pool)
         .await;
         user

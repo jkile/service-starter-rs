@@ -2,6 +2,7 @@ use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::time::Duration;
 use tracing::instrument;
 
+pub mod sessions;
 pub mod users;
 
 #[derive(Debug, Clone)]

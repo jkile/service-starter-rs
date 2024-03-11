@@ -1,13 +1,13 @@
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
-use axum::http::Method;
-use axum::{extract::Request, http::HeaderMap, response::Response, Router};
+use axum::http::{Method, Request};
+use axum::{http::HeaderMap, response::Response, Router};
 use bytes::Bytes;
-use controllers;
+use controllers::{self};
 use std::time::Duration;
 use tower_http::classify::ServerErrorsFailureClass;
+use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use tower_livereload::LiveReloadLayer;
 use tracing::info;
 use tracing::Level;
 use tracing::Span;
@@ -32,10 +32,11 @@ async fn main() -> anyhow::Result<()> {
         .allow_headers([AUTHORIZATION, CONTENT_TYPE]);
 
     let db = persistence::Db::new().await;
-    let live_reload = LiveReloadLayer::new();
+    let app_state = controllers::AppState { db };
+
     let router = Router::new()
         .nest("/api", controllers::collect_routes())
-        .with_state(db)
+        .with_state(app_state)
         .layer(cors)
         .layer(
             TraceLayer::new_for_http()
@@ -75,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
                     },
                 ),
         )
-        .layer(live_reload);
+        .layer(CompressionLayer::new());
 
     let port = 8080_u16;
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
