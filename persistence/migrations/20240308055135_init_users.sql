@@ -1,7 +1,7 @@
 -- Add migration script here
 CREATE TABLE IF NOT EXISTS users (
     id UUID primary key not null,
-    username varchar(20),
+    username varchar(20)
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
