@@ -1,13 +1,17 @@
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
-use axum::http::{Method, Request};
-use axum::{http::HeaderMap, response::Response, Router};
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE};
+use axum::http::{HeaderMap, HeaderName, HeaderValue, Method, Request};
+use axum::{response::Response, Router};
 use bytes::Bytes;
 use controllers::{self};
+use notify::Watcher;
+use std::path::Path;
 use std::time::Duration;
 use tower_http::classify::ServerErrorsFailureClass;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
+use tower_livereload::LiveReloadLayer;
 use tracing::info;
 use tracing::Level;
 use tracing::Span;
@@ -16,6 +20,7 @@ use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    dotenvy::dotenv()?;
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -34,9 +39,31 @@ async fn main() -> anyhow::Result<()> {
     let db = persistence::Db::new().await;
     let app_state = controllers::AppState { db };
 
+    let assets_path = std::env::current_dir().unwrap();
+
+    let live_reload = LiveReloadLayer::new();
+    let reloader = live_reload.reloader();
+
     let router = Router::new()
-        .nest("/api", controllers::collect_routes())
+        .merge(controllers::collect_template_routes())
+        .nest_service(
+            "/assets",
+            ServeDir::new(format!(
+                "{}/controllers/templates/assets",
+                assets_path.to_str().unwrap()
+            )),
+        )
+        .nest_service(
+            "/scripts",
+            ServeDir::new(format!(
+                "{}/controllers/templates/scripts",
+                assets_path.to_str().unwrap()
+            )),
+        )
+        .nest("/api", controllers::collect_api_routes())
+        .merge(controllers::collect_fallback_route())
         .with_state(app_state)
+        .layer(live_reload.request_predicate(not_htmx_predicate))
         .layer(cors)
         .layer(
             TraceLayer::new_for_http()
@@ -48,7 +75,13 @@ async fn main() -> anyhow::Result<()> {
                         method = tracing::field::display(request.method()),
                         uri = tracing::field::display(request.uri().path()),
                         version = tracing::field::debug(request.version()),
-                        headers = tracing::field::debug(request.headers()),
+                        headers = tracing::field::debug(
+                            request
+                                .headers()
+                                .iter()
+                                .filter(|header| header.0 != COOKIE)
+                                .collect::<Vec<(&HeaderName, &HeaderValue)>>()
+                        ),
                         request_id = tracing::field::display(request_id)
                     )
                 })
@@ -78,6 +111,12 @@ async fn main() -> anyhow::Result<()> {
         )
         .layer(CompressionLayer::new());
 
+    let mut watcher = notify::recommended_watcher(move |_| reloader.reload())?;
+    watcher.watch(
+        Path::new("./controllers/templates"),
+        notify::RecursiveMode::Recursive,
+    )?;
+
     let port = 8080_u16;
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
 
@@ -87,4 +126,8 @@ async fn main() -> anyhow::Result<()> {
     axum::serve(listener, router).await.unwrap();
 
     Ok(())
+}
+
+fn not_htmx_predicate<T>(req: &Request<T>) -> bool {
+    !req.headers().contains_key("hx-request")
 }

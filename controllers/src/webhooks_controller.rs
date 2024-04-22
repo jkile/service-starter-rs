@@ -1,5 +1,7 @@
 use axum::{http::HeaderMap, routing::post, Json, Router};
+// use models::users::User;
 use serde::{Deserialize, Serialize};
+// use services::user_service;
 use utils::error::ApplicationError;
 
 use crate::AppState;
@@ -32,8 +34,10 @@ async fn clerk_webhook(
     if let Err(e) = verify_webhook(&headers, bytes.as_slice()) {
         return Err(e);
     }
-
-    //user_service::create_user(app_state.db, user);
+    // let id = payload.data.id;
+    // let username = payload.data.username.unwrap();
+    // let user = User::new(id, username)
+    // user_service::create_user(app_state.db, user);
     Ok(Json(payload))
 }
 

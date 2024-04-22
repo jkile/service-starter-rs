@@ -1,0 +1,12 @@
+{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
+%}
+<h1 class="text-3xl font-bold underline text-purple-500">Hello world!</h1>
+<button
+    type="button"
+    hx-get="/htmx"
+    hx-swap="innerHtml"
+    class="rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+>
+    Hello
+</button>
+{% endblock %}

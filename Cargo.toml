@@ -9,6 +9,7 @@ members = ["controllers", "models", "persistence", "services", "utils"]
 
 [workspace.dependencies]
 anyhow = { version = "1.0.75" }
+askama = { version = "0.12.1" }
 axum = { version = "0.7.4", features = ["macros"] }
 bytes = { version = "1.5.0", features = ["serde"] }
 dotenvy = { version = "0.15.7" }
@@ -41,12 +42,13 @@ uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
 
 [dependencies]
 anyhow = { workspace = true }
+askama = { workspace = true }
 axum = { workspace = true }
 bytes = { workspace = true }
 controllers = { path = "./controllers" }
 dotenvy = { workspace = true }
 models = { path = "./models" }
-notify = { workspace = true }
+notify.workspace = true
 persistence = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -55,6 +57,7 @@ svix = { workspace = true }
 tokio = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
+tower-livereload = "0.9.2"
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 utils = { path = "./utils" }

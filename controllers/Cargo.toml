@@ -9,6 +9,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
+askama = { workspace = true }
 axum = { workspace = true }
 models = { path = "../models" }
 persistence = { path = "../persistence" }
