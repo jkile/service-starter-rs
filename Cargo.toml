@@ -36,12 +36,13 @@ tower-http = { version = "0.5.1", features = [
     "compression-gzip",
 ] }
 tracing = { version = "0.1.40" }
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
 
 [dependencies]
 anyhow = { workspace = true }
 axum = { workspace = true }
+axum-login = "0.15.1"
 bytes = { workspace = true }
 controllers = { path = "./controllers" }
 dotenvy = { workspace = true }

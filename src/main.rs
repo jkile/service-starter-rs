@@ -1,12 +1,14 @@
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
-use axum::http::{Method, Request};
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE};
+use axum::http::{HeaderName, HeaderValue, Method, Request};
 use axum::{http::HeaderMap, response::Response, Router};
 use bytes::Bytes;
 use controllers::{self};
+use dotenvy::dotenv;
 use std::time::Duration;
 use tower_http::classify::ServerErrorsFailureClass;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use tracing::info;
 use tracing::Level;
@@ -16,12 +18,13 @@ use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    dotenv().unwrap();
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| "service=debug".into()),
         )
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer().pretty())
         .init();
 
     info!("Initializing router...");
@@ -34,8 +37,18 @@ async fn main() -> anyhow::Result<()> {
     let db = persistence::Db::new().await;
     let app_state = controllers::AppState { db };
 
+    let public_path = "./client/dist";
+    let astro_service = ServeDir::new(public_path)
+        .append_index_html_on_directories(true)
+        .not_found_service(ServeFile::new("./client/dist/404.html"));
+    let astro_authed_service = ServeDir::new(format!("{}/auth", public_path))
+        .append_index_html_on_directories(true)
+        .not_found_service(ServeFile::new("./client/dist/404.html"));
+
     let router = Router::new()
+        .nest_service("/auth", astro_authed_service)
         .nest("/api", controllers::collect_routes())
+        .nest_service("/", astro_service)
         .with_state(app_state)
         .layer(cors)
         .layer(
@@ -48,7 +61,13 @@ async fn main() -> anyhow::Result<()> {
                         method = tracing::field::display(request.method()),
                         uri = tracing::field::display(request.uri().path()),
                         version = tracing::field::debug(request.version()),
-                        headers = tracing::field::debug(request.headers()),
+                        headers = tracing::field::debug(
+                            request
+                                .headers()
+                                .iter()
+                                .filter(|header| header.0 != COOKIE)
+                                .collect::<Vec<(&HeaderName, &HeaderValue)>>()
+                        ),
                         request_id = tracing::field::display(request_id)
                     )
                 })
