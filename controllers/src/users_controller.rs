@@ -36,7 +36,7 @@ async fn get_user(
     State(app_state): State<AppState>,
     Path(id): Path<UserId>,
 ) -> Result<Json<User>, ApplicationError> {
-    let user = user_service::get_user(app_state.db, id).await?;
+    let user = user_service::get_user(&app_state.db, id).await?;
     Ok(Json(user))
 }
 
@@ -46,7 +46,7 @@ async fn create_user(
 ) -> Result<Json<User>, ApplicationError> {
     let user_id = Uuid::new_v4();
     let user_to_create = User::new(user_id, payload.username, Some(payload.password), None);
-    let user = user_service::create_user(app_state.db.clone(), user_to_create).await?;
+    let user = user_service::create_user(&app_state.db, user_to_create).await?;
     Ok(Json(user))
 }
 
@@ -56,7 +56,7 @@ async fn login(
     Form(credentials): Form<PasswordCredentials>,
 ) -> Result<Json<User>, ApplicationError> {
     let user = match auth_session
-        .authenticate(Credentials::Password(credentials.clone()))
+        .authenticate(Credentials::Password(credentials))
         .await
     {
         Ok(Some(user)) => user,
@@ -98,12 +98,12 @@ async fn signup(
         Some(credentials.password.clone()),
         None,
     );
-    let user = user_service::create_user(app_state.db, user_to_create).await;
+    let user = user_service::create_user(&app_state.db, user_to_create).await;
     if let Err(err) = user {
         return Err(err);
     }
     let authed_user = match auth_session
-        .authenticate(Credentials::Password(credentials.clone()))
+        .authenticate(Credentials::Password(credentials))
         .await
     {
         Ok(Some(user)) => user,

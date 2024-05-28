@@ -3,7 +3,7 @@ use persistence::{users::UsersTable, PostgresDb};
 use tracing::error;
 use utils::error::ApplicationError;
 
-pub async fn get_user(db: PostgresDb, user_id: UserId) -> Result<User, ApplicationError> {
+pub async fn get_user(db: &PostgresDb, user_id: UserId) -> Result<User, ApplicationError> {
     let user = db.get_user(user_id).await;
     match user {
         Ok(user) => Ok(user),
@@ -14,13 +14,13 @@ pub async fn get_user(db: PostgresDb, user_id: UserId) -> Result<User, Applicati
     }
 }
 
-pub async fn create_user(db: PostgresDb, user: User) -> Result<User, ApplicationError> {
+pub async fn create_user(db: &PostgresDb, user: User) -> Result<User, ApplicationError> {
     if let None = user.password {
         return Err(ApplicationError::BadRequest(
             "No password included with user".to_string(),
         ));
     }
-    check_unique_username(db.clone(), &user).await?;
+    check_unique_username(&db, &user).await?;
     let created_user = db.create_user(user).await;
     match created_user {
         Ok(user) => Ok(user),
@@ -31,7 +31,7 @@ pub async fn create_user(db: PostgresDb, user: User) -> Result<User, Application
     }
 }
 
-async fn check_unique_username(db: PostgresDb, user: &User) -> Result<(), ApplicationError> {
+async fn check_unique_username(db: &PostgresDb, user: &User) -> Result<(), ApplicationError> {
     match db.check_username(&user.username).await {
         Ok(count) => {
             if count == 0 {
