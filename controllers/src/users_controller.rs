@@ -6,12 +6,11 @@ use axum::{
     Form, Json, Router,
 };
 use axum_login::{login_required, AuthSession};
-use models::users::{Credentials, PasswordCredentials, User, UserId};
+use models::users::{Credentials, PasswordCredentials, User, UserExternal, UserId};
 use persistence::PostgresDb;
 use serde::Deserialize;
 use services::user_service;
 use sqlx::types::Uuid;
-//use tower_http::auth::AsyncRequireAuthorizationLayer;
 use utils::error::ApplicationError;
 
 use crate::AppState;
@@ -35,26 +34,26 @@ pub fn collect_routes() -> Router<AppState> {
 async fn get_user(
     State(app_state): State<AppState>,
     Path(id): Path<UserId>,
-) -> Result<Json<User>, ApplicationError> {
+) -> Result<Json<UserExternal>, ApplicationError> {
     let user = user_service::get_user(&app_state.db, id).await?;
-    Ok(Json(user))
+    Ok(Json(user.into()))
 }
 
 async fn create_user(
     State(app_state): State<AppState>,
     Json(payload): Json<CreateUser>,
-) -> Result<Json<User>, ApplicationError> {
+) -> Result<Json<UserExternal>, ApplicationError> {
     let user_id = Uuid::new_v4();
     let user_to_create = User::new(user_id, payload.username, Some(payload.password), None);
     let user = user_service::create_user(&app_state.db, user_to_create).await?;
-    Ok(Json(user))
+    Ok(Json(user.into()))
 }
 
 async fn login(
     State(_app_state): State<AppState>,
     mut auth_session: AuthSession<PostgresDb>,
     Form(credentials): Form<PasswordCredentials>,
-) -> Result<Json<User>, ApplicationError> {
+) -> Result<Json<UserExternal>, ApplicationError> {
     let user = match auth_session
         .authenticate(Credentials::Password(credentials))
         .await
@@ -73,7 +72,7 @@ async fn login(
             "Failed authentication".to_string(),
         ));
     }
-    Ok(Json(user))
+    Ok(Json(user.into()))
 }
 
 async fn logout(
@@ -90,7 +89,7 @@ async fn signup(
     State(app_state): State<AppState>,
     mut auth_session: AuthSession<PostgresDb>,
     Form(credentials): Form<PasswordCredentials>,
-) -> Result<Json<User>, ApplicationError> {
+) -> Result<Json<UserExternal>, ApplicationError> {
     let user_id = Uuid::new_v4();
     let user_to_create = User::new(
         user_id,
@@ -120,8 +119,8 @@ async fn signup(
             "Failed authentication".to_string(),
         ));
     }
-
-    Ok(Json(user.unwrap()))
+    //auth_session.backend.session_store.load(session_id)
+    Ok(Json(user.unwrap().into()))
     // redirect logic
     // if let Some(ref next) = credentials.next {
     //     Redirect::to(next)

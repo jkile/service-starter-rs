@@ -322,6 +322,7 @@ dependencies = [
  "services",
  "sqlx",
  "tower-http",
+ "tower-sessions-core",
  "tracing",
  "utils",
 ]

@@ -3,12 +3,20 @@ use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use uuid::Uuid;
 
+// Used for internal typing and accessing sensitive data
 #[derive(Deserialize, Serialize, FromRow, Clone)]
 pub struct User {
     pub id: UserId,
     pub username: Username,
     pub password: Option<String>,
     pub access_token: Option<String>,
+}
+
+// External facing user object. Prefer using this whenever possible
+#[derive(Serialize, Deserialize)]
+pub struct UserExternal {
+    id: UserId,
+    username: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -39,6 +47,21 @@ impl User {
             password,
             access_token,
         }
+    }
+}
+
+impl From<User> for UserExternal {
+    fn from(user: User) -> Self {
+        UserExternal {
+            id: user.id,
+            username: user.username,
+        }
+    }
+}
+
+impl UserExternal {
+    pub fn new(id: UserId, username: String) -> UserExternal {
+        UserExternal { id, username }
     }
 }
 
