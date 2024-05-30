@@ -1,10 +1,11 @@
 use axum_login::{axum::async_trait, AuthnBackend};
-use models::users::{Credentials, User, UserId};
+use models::users::{Credentials, DbUser, User, UserId};
 use password_auth::verify_password;
 use thiserror::Error;
 use tokio::task;
 use utils::error::ApplicationError;
 
+use crate::users::UsersTable;
 use crate::PostgresDb;
 
 #[derive(Debug, Error)]
@@ -26,33 +27,39 @@ impl AuthnBackend for PostgresDb {
     async fn authenticate(&self, credentials: Credentials) -> Result<Option<User>, Self::Error> {
         match credentials {
             Credentials::Password(password_cred) => {
-                let user = sqlx::query_as::<_, User>(
+                let user = sqlx::query_as::<_, DbUser>(
                     "SELECT * FROM users WHERE username = $1 AND password IS NOT NULL",
                 )
                 .bind(password_cred.username)
-                .fetch_optional(&self.conn_pool)
+                .fetch_one(&self.conn_pool)
                 .await
-                .map_err(Self::Error::Sqlx)?;
-
+                .map_err(Self::Error::Sqlx);
+                let converted_user: Option<User> = match user {
+                    Ok(user) => Some(user.into()),
+                    Err(err) => {
+                        println!("{}", err);
+                        return Err(err);
+                    }
+                };
                 task::spawn_blocking(|| {
-                    Ok(user.filter(|user| {
-                        let Some(ref password) = user.password else {
-                            return false;
-                        };
-                        verify_password(password_cred.password, password.as_str()).is_ok()
-                    }))
+                    Ok(converted_user
+                        .filter(|user| {
+                            let Some(ref password) = user.password else {
+                                return false;
+                            };
+                            verify_password(password_cred.password, password.as_str()).is_ok()
+                        })
+                        .into())
                 })
                 .await?
             }
         }
     }
     async fn get_user(&self, user_id: &UserId) -> Result<Option<User>, Self::Error> {
-        Ok(
-            sqlx::query_as::<_, User>("SELECT * FROM users WHERE users.id = $1")
-                .bind(user_id)
-                .fetch_optional(&self.conn_pool)
+        Ok(Some(
+            self.get_user_by_id(*user_id)
                 .await
                 .map_err(Self::Error::Sqlx)?,
-        )
+        ))
     }
 }

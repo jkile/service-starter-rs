@@ -4,7 +4,7 @@ use tracing::error;
 use utils::error::ApplicationError;
 
 pub async fn get_user(db: &PostgresDb, user_id: UserId) -> Result<User, ApplicationError> {
-    let user = db.get_user(user_id).await;
+    let user = db.get_user_by_id(user_id).await;
     match user {
         Ok(user) => Ok(user),
         Err(e) => {
