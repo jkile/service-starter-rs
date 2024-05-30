@@ -1,10 +1,5 @@
-use std::collections::HashSet;
-
-use axum_login::{axum::async_trait, AuthnBackend, AuthzBackend};
-use models::{
-    permissions::Permission,
-    users::{Credentials, DbUser, User, UserId},
-};
+use axum_login::{axum::async_trait, AuthnBackend};
+use models::users::{Credentials, DbUser, User, UserId};
 use password_auth::verify_password;
 use thiserror::Error;
 use tokio::task;
@@ -68,30 +63,3 @@ impl AuthnBackend for PostgresDb {
         ))
     }
 }
-
-// #[async_trait]
-// impl AuthzBackend for PostgresDb {
-//     type Permission = Permission;
-//     async fn get_all_permissions(
-//         &self,
-//         user: &Self::User,
-//     ) -> Result<HashSet<Self::Permission>, Self::Error> {
-//         let permissions: Result<Vec<Self::Permission>, Self::Error> =
-//             sqlx::query_as("SELECT permissions FROM users_permissions WHERE user_id = $1")
-//                 .bind(user.id)
-//                 .fetch_all(&self.conn_pool)
-//                 .await
-//                 .map_err(Self::Error::Sqlx);
-//         match permissions {
-//             Ok(mut permissions) => return Ok(HashSet::from_iter(permissions.drain(0..))),
-//             Err(err) => return Err(err),
-//         }
-//     }
-
-//     async fn has_perm(
-//         &self,
-//         user: &Self::User,
-//         perm: Self::Permission,
-//     ) -> Result<bool, Self::Error> {
-//     }
-// }
