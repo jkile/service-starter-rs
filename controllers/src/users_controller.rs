@@ -1,12 +1,15 @@
 use axum::{
-    extract::{Path, State},
+    extract::State,
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
     Form, Json, Router,
 };
 use axum_login::{login_required, AuthSession};
-use models::users::{Credentials, PasswordCredentials, User, UserExternal, UserId};
+use models::{
+    permissions::{Permission, PermissionType},
+    users::{Credentials, PasswordCredentials, User, UserExternal},
+};
 use persistence::PostgresDb;
 use serde::Deserialize;
 use services::user_service;
@@ -23,7 +26,7 @@ struct CreateUser {
 
 pub fn collect_routes() -> Router<AppState> {
     Router::new()
-        .route("/:id", get(get_user))
+        .route("/", get(get_user))
         .route_layer(login_required!(PostgresDb))
         .route("/login", post(login))
         .route("/logout", get(logout))
@@ -33,9 +36,10 @@ pub fn collect_routes() -> Router<AppState> {
 
 async fn get_user(
     State(app_state): State<AppState>,
-    Path(id): Path<UserId>,
+    auth_session: AuthSession<PostgresDb>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
-    let user = user_service::get_user(&app_state.db, id).await?;
+    let session_user = auth_session.user.unwrap();
+    let user = user_service::get_user(&app_state.db, session_user.id).await?;
     Ok(Json(user.into()))
 }
 
@@ -44,7 +48,13 @@ async fn create_user(
     Json(payload): Json<CreateUser>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
     let user_id = Uuid::new_v4();
-    let user_to_create = User::new(user_id, payload.username, Some(payload.password), None);
+    let user_to_create = User::new(
+        user_id,
+        payload.username,
+        Some(payload.password),
+        None,
+        Permission::from(PermissionType::User),
+    );
     let user = user_service::create_user(&app_state.db, user_to_create).await?;
     Ok(Json(user.into()))
 }
@@ -96,6 +106,7 @@ async fn signup(
         credentials.username.clone(),
         Some(credentials.password.clone()),
         None,
+        Permission::from(PermissionType::User),
     );
     let user = user_service::create_user(&app_state.db, user_to_create).await;
     if let Err(err) = user {
