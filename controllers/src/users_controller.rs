@@ -10,57 +10,33 @@ use models::{
     permissions::{Permission, PermissionType},
     users::{Credentials, PasswordCredentials, User, UserExternal},
 };
-use persistence::PostgresDb;
-use serde::Deserialize;
+use persistence::{Db, PostgresDb};
 use services::user_service;
 use sqlx::types::Uuid;
 use utils::error::ApplicationError;
 
 use crate::AppState;
 
-#[derive(Deserialize)]
-struct CreateUser {
-    username: String,
-    password: String,
-}
-
-pub fn collect_routes() -> Router<AppState> {
+pub fn collect_routes<T: Db + 'static>() -> Router<AppState<T>> {
     Router::new()
         .route("/", get(get_user))
         .route_layer(login_required!(PostgresDb))
         .route("/login", post(login))
         .route("/logout", get(logout))
         .route("/signup", post(signup))
-        .route("/", post(create_user))
 }
 
-async fn get_user(
-    State(app_state): State<AppState>,
+async fn get_user<T: Db>(
+    State(app_state): State<AppState<T>>,
     auth_session: AuthSession<PostgresDb>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
     let session_user = auth_session.user.unwrap();
-    let user = user_service::get_user(&app_state.db, session_user.id).await?;
+    let user = user_service::get_user(app_state.db, session_user.id).await?;
     Ok(Json(user.into()))
 }
 
-async fn create_user(
-    State(app_state): State<AppState>,
-    Json(payload): Json<CreateUser>,
-) -> Result<Json<UserExternal>, ApplicationError> {
-    let user_id = Uuid::new_v4();
-    let user_to_create = User::new(
-        user_id,
-        payload.username,
-        Some(payload.password),
-        None,
-        Permission::from(PermissionType::User),
-    );
-    let user = user_service::create_user(&app_state.db, user_to_create).await?;
-    Ok(Json(user.into()))
-}
-
-async fn login(
-    State(_app_state): State<AppState>,
+async fn login<T: Db>(
+    State(_app_state): State<AppState<T>>,
     mut auth_session: AuthSession<PostgresDb>,
     Form(credentials): Form<PasswordCredentials>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
@@ -85,8 +61,8 @@ async fn login(
     Ok(Json(user.into()))
 }
 
-async fn logout(
-    State(_app_state): State<AppState>,
+async fn logout<T: Db>(
+    State(_app_state): State<AppState<T>>,
     mut auth_session: AuthSession<PostgresDb>,
 ) -> impl IntoResponse {
     match auth_session.logout().await {
@@ -95,8 +71,8 @@ async fn logout(
     }
 }
 
-async fn signup(
-    State(app_state): State<AppState>,
+async fn signup<T: Db>(
+    State(app_state): State<AppState<T>>,
     mut auth_session: AuthSession<PostgresDb>,
     Form(credentials): Form<PasswordCredentials>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
@@ -108,7 +84,7 @@ async fn signup(
         None,
         Permission::from(PermissionType::User),
     );
-    let user = user_service::create_user(&app_state.db, user_to_create).await;
+    let user = user_service::create_user(app_state.db, user_to_create).await;
     if let Err(err) = user {
         return Err(err);
     }
@@ -130,13 +106,5 @@ async fn signup(
             "Failed authentication".to_string(),
         ));
     }
-    //auth_session.backend.session_store.load(session_id)
     Ok(Json(user.unwrap().into()))
-    // redirect logic
-    // if let Some(ref next) = credentials.next {
-    //     Redirect::to(next)
-    // } else {
-    //     Redirect::to("/")
-    // }
-    // .into_response()
 }

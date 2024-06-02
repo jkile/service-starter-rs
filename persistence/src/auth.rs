@@ -5,7 +5,6 @@ use thiserror::Error;
 use tokio::task;
 use utils::error::ApplicationError;
 
-use crate::users::UsersTable;
 use crate::PostgresDb;
 
 #[derive(Debug, Error)]
@@ -56,10 +55,17 @@ impl AuthnBackend for PostgresDb {
         }
     }
     async fn get_user(&self, user_id: &UserId) -> Result<Option<User>, Self::Error> {
-        Ok(Some(
-            self.get_user_by_id(*user_id)
-                .await
-                .map_err(Self::Error::Sqlx)?,
-        ))
+        let row = sqlx::query_as::<_, DbUser>("SELECT * FROM users WHERE users.id = $1")
+            .bind(user_id)
+            .fetch_one(&self.conn_pool)
+            .await
+            .map_err(Self::Error::Sqlx);
+        if let Ok(user) = row {
+            Ok(Some(user.into()))
+        } else {
+            Err(Self::Error::AuthError(ApplicationError::SqlError(
+                "Failed to get user".to_string(),
+            )))
+        }
     }
 }

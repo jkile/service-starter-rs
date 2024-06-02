@@ -1,10 +1,24 @@
+use axum_login::{axum::async_trait, AuthnBackend};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::time::Duration;
+use tower_sessions_core::SessionStore;
 use tower_sessions_sqlx_store::PostgresStore;
 use tracing::instrument;
+use users::UsersTable;
 
 pub mod auth;
 pub mod users;
+
+#[async_trait]
+pub trait Db: UsersTable + AuthnBackend + Clone + Send + Sync {
+    fn get_session_store(&self) -> impl SessionStore + Clone;
+}
+
+impl Db for PostgresDb {
+    fn get_session_store(&self) -> impl SessionStore + Clone {
+        self.session_store.clone()
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct PostgresDb {

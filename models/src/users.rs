@@ -23,9 +23,9 @@ pub type UserPermissionsList = Vec<Permission>;
 // External facing user object. Prefer using this whenever possible
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserExternal {
-    id: UserId,
-    username: String,
-    permissions: Permission,
+    pub id: UserId,
+    pub username: String,
+    pub permissions: Permission,
 }
 
 #[derive(Debug, FromRow)]

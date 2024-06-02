@@ -69,3 +69,4 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 utils = { path = "./utils" }
 uuid = { workspace = true }
+trait-variant = "0.1.2"

@@ -11,15 +11,17 @@ pub enum ApplicationError {
     #[error("Authentication error:  {0}")]
     AuthenticationError(String),
     #[error("Resource not found error: {0}")]
-    ResourceNotFound(sqlx::Error),
+    ResourceNotFound(String),
     #[error("Failure creating resource error: {0}")]
-    FailureCreatingResource(sqlx::Error),
+    FailureCreatingResource(String),
     #[error("Unauthorized request")]
     UnauthorizedRequest(),
     #[error("Bad request: {0}")]
     BadRequest(String),
     #[error("Resource conflict: {0}")]
     ResourceConflictError(String),
+    #[error("Sql query failed: {0}")]
+    SqlError(String),
 }
 
 #[derive(Serialize)]
@@ -34,18 +36,12 @@ impl IntoResponse for ApplicationError {
             ApplicationError::AuthenticationError(message) => {
                 (StatusCode::UNAUTHORIZED, Json(ErrorResponse { message })).into_response()
             }
-            ApplicationError::ResourceNotFound(sql_error) => (
-                StatusCode::NOT_FOUND,
-                Json(ErrorResponse {
-                    message: sql_error.to_string(),
-                }),
-            )
-                .into_response(),
-            ApplicationError::FailureCreatingResource(sql_error) => (
+            ApplicationError::ResourceNotFound(message) => {
+                (StatusCode::NOT_FOUND, Json(ErrorResponse { message })).into_response()
+            }
+            ApplicationError::FailureCreatingResource(message) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse {
-                    message: sql_error.to_string(),
-                }),
+                Json(ErrorResponse { message }),
             )
                 .into_response(),
             ApplicationError::UnauthorizedRequest() => (
@@ -61,6 +57,11 @@ impl IntoResponse for ApplicationError {
             ApplicationError::ResourceConflictError(message) => {
                 (StatusCode::CONFLICT, Json(ErrorResponse { message })).into_response()
             }
+            ApplicationError::SqlError(message) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse { message }),
+            )
+                .into_response(),
         }
     }
 }
