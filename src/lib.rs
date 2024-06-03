@@ -4,7 +4,7 @@ use axum::{http::HeaderMap, response::Response, Router};
 use axum_login::tower_sessions::SessionManagerLayer;
 use axum_login::AuthManagerLayerBuilder;
 use bytes::Bytes;
-use controllers::{self, AppState};
+use controllers::{self};
 use persistence::Db;
 use std::time::Duration;
 use time;
@@ -12,21 +12,21 @@ use tower_http::classify::ServerErrorsFailureClass;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use tower_sessions_core::Expiry;
+use tower_sessions_core::{Expiry, SessionStore};
 use tracing::Level;
 use tracing::Span;
 use uuid::Uuid;
 
-pub fn app<T: Db + 'static>(app_state: AppState<T>) -> Router {
+pub fn app<T: Db + 'static>(db: T, session_store: impl SessionStore + Clone) -> Router {
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
         .allow_origin(Any)
         .allow_headers([AUTHORIZATION, CONTENT_TYPE]);
-    let session_layer = SessionManagerLayer::new(app_state.db.get_session_store())
+    let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false)
         .with_expiry(Expiry::OnInactivity(time::Duration::seconds(3600)));
-    let auth_layer = AuthManagerLayerBuilder::new(app_state.db.clone(), session_layer).build();
-
+    let auth_layer = AuthManagerLayerBuilder::new(db.clone(), session_layer).build();
+    let app_state = controllers::AppState { db };
     Router::new()
         .nest("/api", controllers::collect_routes())
         .with_state(app_state)

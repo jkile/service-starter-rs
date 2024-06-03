@@ -4,7 +4,6 @@ use axum::{
     body::{to_bytes, Body},
     http::{Request, StatusCode},
 };
-use controllers::AppState;
 use models::{
     permissions::Permission,
     users::{PasswordCredentials, UserExternal},
@@ -13,6 +12,7 @@ use persistence::PostgresDb;
 
 use service_starter_rs::app;
 use tower::ServiceExt;
+use tower_sessions_sqlx_store::PostgresStore;
 use uuid::Uuid;
 
 #[tokio::test]
@@ -29,8 +29,8 @@ async fn singup_test() {
         default_permissions,
     );
     let db = PostgresDb::new().await;
-    let app_state = AppState { db };
-    let app = app(app_state);
+    let session_store = PostgresStore::new(db.conn_pool.clone());
+    let app = app(db, session_store);
     let request = Request::builder()
         .uri("/api/users/signup")
         .method("POST")

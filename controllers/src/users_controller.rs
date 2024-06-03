@@ -1,11 +1,12 @@
 use axum::{
     extract::State,
     http::StatusCode,
+    middleware,
     response::IntoResponse,
     routing::{get, post},
     Form, Json, Router,
 };
-use axum_login::{login_required, AuthSession};
+use axum_login::AuthSession;
 use models::{
     permissions::{Permission, PermissionType},
     users::{Credentials, PasswordCredentials, User, UserExternal},
@@ -15,12 +16,12 @@ use services::user_service;
 use sqlx::types::Uuid;
 use utils::error::ApplicationError;
 
-use crate::AppState;
+use crate::{require_login, AppState};
 
 pub fn collect_routes<T: Db + 'static>() -> Router<AppState<T>> {
     Router::new()
         .route("/", get(get_user))
-        .route_layer(login_required!(PostgresDb))
+        .layer(middleware::from_fn(require_login::<T>))
         .route("/login", post(login))
         .route("/logout", get(logout))
         .route("/signup", post(signup))
@@ -28,10 +29,10 @@ pub fn collect_routes<T: Db + 'static>() -> Router<AppState<T>> {
 
 async fn get_user<T: Db>(
     State(app_state): State<AppState<T>>,
-    auth_session: AuthSession<PostgresDb>,
+    auth_session: AuthSession<T>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
     let session_user = auth_session.user.unwrap();
-    let user = user_service::get_user(app_state.db, session_user.id).await?;
+    let user = user_service::get_user(&app_state.db, session_user.id).await?;
     Ok(Json(user.into()))
 }
 
@@ -84,7 +85,7 @@ async fn signup<T: Db>(
         None,
         Permission::from(PermissionType::User),
     );
-    let user = user_service::create_user(app_state.db, user_to_create).await;
+    let user = user_service::create_user(&app_state.db, user_to_create).await;
     if let Err(err) = user {
         return Err(err);
     }

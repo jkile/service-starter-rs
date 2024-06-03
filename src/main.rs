@@ -1,10 +1,17 @@
+use std::thread;
+
 use dotenvy::dotenv;
+use peak_alloc::PeakAlloc;
 use persistence::PostgresDb;
 use tokio::signal;
 use tokio::task::AbortHandle;
 use tower_sessions_core::ExpiredDeletion;
+use tower_sessions_sqlx_store::PostgresStore;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+#[global_allocator]
+static PEAK_ALLOC: PeakAlloc = PeakAlloc;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
@@ -20,20 +27,20 @@ async fn main() -> anyhow::Result<()> {
     info!("Initializing router...");
 
     let db = PostgresDb::new().await;
+    let session_store = PostgresStore::new(db.conn_pool.clone());
     let deletion_task = tokio::task::spawn(
-        db.session_store
+        session_store
             .clone()
             .continuously_delete_expired(tokio::time::Duration::from_secs(60)),
     );
-    let app_state = controllers::AppState { db };
 
-    let app = service_starter_rs::app(app_state);
+    let app = service_starter_rs::app(db, session_store);
 
     let port = 8080_u16;
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
 
     info!("Router initialized, now listening on port {}", port);
-
+    profile_mem();
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal(deletion_task.abort_handle()))
@@ -65,4 +72,15 @@ async fn shutdown_signal(deletion_task_abort_handle: AbortHandle) {
         _ = ctrl_c => { deletion_task_abort_handle.abort() },
         _ = terminate => { deletion_task_abort_handle.abort() },
     }
+}
+
+#[cfg(debug_assertions)]
+fn profile_mem() {
+    thread::spawn(|| loop {
+        let current_mem = PEAK_ALLOC.current_usage_as_mb();
+        info!("CURRENT ALLOCATION {} MB of RAM", current_mem);
+        let peak_mem = PEAK_ALLOC.peak_usage_as_mb();
+        info!("MAX LIFETIME ALLOCATION {} MB", peak_mem);
+        thread::sleep(std::time::Duration::from_secs(2));
+    });
 }

@@ -3,7 +3,7 @@ use persistence::Db;
 use tracing::error;
 use utils::error::ApplicationError;
 
-pub async fn get_user<T: Db>(db: T, user_id: UserId) -> Result<User, ApplicationError> {
+pub async fn get_user<T: Db>(db: &T, user_id: UserId) -> Result<User, ApplicationError> {
     let user = db.get_user_by_id(user_id).await;
     match user {
         Ok(user) => Ok(user),
@@ -16,13 +16,13 @@ pub async fn get_user<T: Db>(db: T, user_id: UserId) -> Result<User, Application
     }
 }
 
-pub async fn create_user<T: Db>(db: T, user: User) -> Result<User, ApplicationError> {
+pub async fn create_user<T: Db>(db: &T, user: User) -> Result<User, ApplicationError> {
     if let None = user.password {
         return Err(ApplicationError::BadRequest(
             "No password included with user".to_string(),
         ));
     }
-    check_unique_username(db.clone(), &user).await?;
+    check_unique_username(db, &user).await?;
     let created_user = db.create_user(user).await;
     match created_user {
         Ok(user) => Ok(user),
@@ -37,7 +37,7 @@ pub async fn create_user<T: Db>(db: T, user: User) -> Result<User, ApplicationEr
     }
 }
 
-async fn check_unique_username<T: Db>(db: T, user: &User) -> Result<(), ApplicationError> {
+async fn check_unique_username<T: Db>(db: &T, user: &User) -> Result<(), ApplicationError> {
     match db.check_username(&user.username).await {
         Ok(count) => {
             if count == 0 {
