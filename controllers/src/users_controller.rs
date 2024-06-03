@@ -11,7 +11,7 @@ use models::{
     permissions::{Permission, PermissionType},
     users::{Credentials, PasswordCredentials, User, UserExternal},
 };
-use persistence::{Db, PostgresDb};
+use persistence::Db;
 use services::user_service;
 use sqlx::types::Uuid;
 use utils::error::ApplicationError;
@@ -38,7 +38,7 @@ async fn get_user<T: Db>(
 
 async fn login<T: Db>(
     State(_app_state): State<AppState<T>>,
-    mut auth_session: AuthSession<PostgresDb>,
+    mut auth_session: AuthSession<T>,
     Form(credentials): Form<PasswordCredentials>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
     let user = match auth_session
@@ -64,7 +64,7 @@ async fn login<T: Db>(
 
 async fn logout<T: Db>(
     State(_app_state): State<AppState<T>>,
-    mut auth_session: AuthSession<PostgresDb>,
+    mut auth_session: AuthSession<T>,
 ) -> impl IntoResponse {
     match auth_session.logout().await {
         Ok(_) => StatusCode::OK.into_response(),
@@ -74,7 +74,7 @@ async fn logout<T: Db>(
 
 async fn signup<T: Db>(
     State(app_state): State<AppState<T>>,
-    mut auth_session: AuthSession<PostgresDb>,
+    mut auth_session: AuthSession<T>,
     Form(credentials): Form<PasswordCredentials>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
     let user_id = Uuid::new_v4();

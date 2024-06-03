@@ -1,5 +1,5 @@
 use axum_login::{axum::async_trait, AuthnBackend};
-use models::users::User;
+use models::users::{Credentials, User};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::time::Duration;
 use tracing::instrument;
@@ -9,7 +9,10 @@ pub mod auth;
 pub mod users;
 
 #[async_trait]
-pub trait Db: UsersTable + AuthnBackend<User = User> + Send + Sync {}
+pub trait Db:
+    UsersTable + AuthnBackend<User = User, Credentials = Credentials> + Send + Sync
+{
+}
 
 impl Db for PostgresDb {}
 
