@@ -1,10 +1,16 @@
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE};
 use axum::http::{HeaderName, HeaderValue, Method, Request};
+use axum::routing::get;
 use axum::{http::HeaderMap, response::Response, Router};
 use axum_login::tower_sessions::SessionManagerLayer;
 use axum_login::AuthManagerLayerBuilder;
 use bytes::Bytes;
 use controllers::{self};
+use dioxus::dioxus_core::VirtualDom;
+use dioxus::prelude::{DioxusRouterExt, LaunchBuilder, ServeConfig, ServeConfigBuilder};
+use dioxus_fullstack::launch::launch;
+use dioxus_fullstack::Config;
+
 use persistence::Db;
 use std::time::Duration;
 use time;
@@ -17,7 +23,7 @@ use tracing::Level;
 use tracing::Span;
 use uuid::Uuid;
 
-pub fn app<T: Db + 'static>(db: T, session_store: impl SessionStore + Clone) -> Router {
+pub async fn app<T: Db + 'static>(db: T, session_store: impl SessionStore + Clone) -> Router {
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
         .allow_origin(Any)
@@ -27,9 +33,13 @@ pub fn app<T: Db + 'static>(db: T, session_store: impl SessionStore + Clone) -> 
         .with_expiry(Expiry::OnInactivity(time::Duration::seconds(3600)));
     let auth_layer = AuthManagerLayerBuilder::new(db.clone(), session_layer).build();
     let app_state = controllers::AppState { db };
+    let client_config = ServeConfigBuilder::new().build();
     Router::new()
+        // .route("/", get(client::app()))
         .nest("/api", controllers::collect_routes())
         .with_state(app_state)
+        .serve_dioxus_application(client_config, || VirtualDom::new(client::app))
+        .await
         .layer(auth_layer)
         .layer(cors)
         .layer(

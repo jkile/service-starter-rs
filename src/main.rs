@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
             .continuously_delete_expired(tokio::time::Duration::from_secs(60)),
     );
 
-    let app = service_starter_rs::app(db, session_store);
+    let app = service_starter_rs::app(db, session_store).await;
 
     let port = 8080_u16;
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));

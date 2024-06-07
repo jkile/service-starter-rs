@@ -5,13 +5,23 @@ edition = "2021"
 
 [workspace]
 resolver = "2"
-members = ["controllers", "models", "persistence", "services", "utils"]
+members = [
+    "client",
+    "controllers",
+    "models",
+    "persistence",
+    "services",
+    "utils",
+]
 
 [workspace.dependencies]
 anyhow = { version = "1.0.75" }
 axum = { version = "0.7.4", features = ["macros"] }
 axum-login = "0.15.1"
 bytes = { version = "1.5.0", features = ["serde"] }
+dioxus = { version = "0.5.1", features = ["fullstack"] }
+dioxus-fullstack = { version = "0.5.2", features = ["axum", "dioxus-ssr"] }
+dioxus-web = { version = "0.5.1", features = ["hydrate"] }
 dotenvy = { version = "0.15.7" }
 http = { version = "1.0.0" }
 futures-util = { version = "0.3.30" }
@@ -50,7 +60,11 @@ anyhow = { workspace = true }
 axum = { workspace = true }
 axum-login = { workspace = true }
 bytes = { workspace = true }
+client = { path = "./client" }
 controllers = { path = "./controllers" }
+dioxus = { workspace = true }
+dioxus-fullstack = { workspace = true }
+dioxus-web = { workspace = true }
 dotenvy = { workspace = true }
 models = { path = "./models" }
 notify = { workspace = true }
