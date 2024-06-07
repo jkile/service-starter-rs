@@ -2,7 +2,7 @@ use std::thread;
 
 use dotenvy::dotenv;
 use peak_alloc::PeakAlloc;
-use persistence::PostgresDb;
+use persistence::postgres_db::postgres_db::PostgresDb;
 use tokio::signal;
 use tokio::task::AbortHandle;
 use tower_sessions_core::ExpiredDeletion;

@@ -16,6 +16,9 @@ pub struct User {
     pub permissions: Permission,
 }
 
+// #[derive(Debug, Deserialize, Serialize, Clone, Copy, Hash, PartialEq, Eq, FromRow, sqlx::Type)]
+// #[sqlx(transparent)]
+// pub struct UserId(Uuid);
 pub type UserId = Uuid;
 pub type Username = String;
 pub type UserPermissionsList = Vec<Permission>;
@@ -48,6 +51,25 @@ pub struct PasswordCredentials {
     pub password: String,
     pub next: Option<String>,
 }
+
+// impl Display for UserId {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", self)
+//     }
+// }
+
+// impl Hash for UserId {
+//     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+//         self.0.hash(state);
+//     }
+// }
+
+// impl Deref for UserId {
+//     type Target = Uuid;
+//     fn deref(&self) -> &Self::Target {
+//         &self.0
+//     }
+// }
 
 impl User {
     pub fn new(
