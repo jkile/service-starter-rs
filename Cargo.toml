@@ -26,10 +26,11 @@ sqlx = { version = "0.7.3", features = [
     "runtime-tokio-rustls",
     "postgres",
     "uuid",
+    "migrate",
 ] }
 time = "0.3.36"
 thiserror = "1.0.61"
-tokio = { version = "1.32.0", features = ["full"] }
+tokio = { version = "1.32.0", features = ["full", "macros"] }
 tower = { version = "0.4.13" }
 tower-http = { version = "0.5.1", features = [
     "auth",
@@ -43,6 +44,7 @@ tower-sessions-sqlx-store = { version = "0.12.0", features = ["postgres"] }
 tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
+validator = { version = "0.18.1", features = ["derive"] }
 
 [dependencies]
 time = { workspace = true }
@@ -69,3 +71,5 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 utils = { path = "./utils" }
 uuid = { workspace = true }
+validator = { workspace = true }
+peak_alloc = "0.2.1"

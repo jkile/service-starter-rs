@@ -3,14 +3,17 @@ use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use std::fmt::Debug;
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::permissions::{Permission, PermissionType};
 
 // Used for internal typing and accessing sensitive data
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Validate)]
 pub struct User {
     pub id: UserId,
+    #[validate(length(min = 2, max = 255))]
     pub username: Username,
+    #[validate(length(min = 8, max = 255))]
     pub password: Option<String>,
     pub access_token: Option<String>,
     pub permissions: Permission,
@@ -23,9 +26,9 @@ pub type UserPermissionsList = Vec<Permission>;
 // External facing user object. Prefer using this whenever possible
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserExternal {
-    id: UserId,
-    username: String,
-    permissions: Permission,
+    pub id: UserId,
+    pub username: String,
+    pub permissions: Permission,
 }
 
 #[derive(Debug, FromRow)]
@@ -34,7 +37,7 @@ pub struct DbUser {
     pub username: Username,
     pub password: Option<String>,
     pub access_token: Option<String>,
-    pub permissions: PermissionType,
+    pub permissions_type: PermissionType,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -42,9 +45,11 @@ pub enum Credentials {
     Password(PasswordCredentials),
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Validate)]
 pub struct PasswordCredentials {
+    #[validate(length(min = 2, max = 255))]
     pub username: String,
+    #[validate(length(min = 2, max = 255))]
     pub password: String,
     pub next: Option<String>,
 }
@@ -74,7 +79,7 @@ impl From<DbUser> for User {
             username: user.username,
             password: user.password,
             access_token: user.access_token,
-            permissions: Permission::from(user.permissions),
+            permissions: Permission::from(user.permissions_type),
         }
     }
 }

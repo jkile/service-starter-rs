@@ -1,37 +1,43 @@
 use models::users::{User, UserId};
-use persistence::{users::UsersTable, PostgresDb};
+use persistence::Db;
 use tracing::error;
 use utils::error::ApplicationError;
 
-pub async fn get_user(db: &PostgresDb, user_id: UserId) -> Result<User, ApplicationError> {
+pub async fn get_user<T: Db>(db: &T, user_id: UserId) -> Result<User, ApplicationError> {
     let user = db.get_user_by_id(user_id).await;
     match user {
         Ok(user) => Ok(user),
         Err(e) => {
             error!("failed to retrieve user from table: {}", e);
-            Err(ApplicationError::ResourceNotFound(e))
+            Err(ApplicationError::ResourceNotFound(
+                "Failed to retrieve user".to_string(),
+            ))
         }
     }
 }
 
-pub async fn create_user(db: &PostgresDb, user: User) -> Result<User, ApplicationError> {
+pub async fn create_user<T: Db>(db: &T, user: User) -> Result<User, ApplicationError> {
     if let None = user.password {
         return Err(ApplicationError::BadRequest(
             "No password included with user".to_string(),
         ));
     }
-    check_unique_username(&db, &user).await?;
+    check_unique_username(db, &user).await?;
     let created_user = db.create_user(user).await;
     match created_user {
         Ok(user) => Ok(user),
         Err(e) => {
             error!("failed to create entry in users table: {}", e);
-            Err(ApplicationError::FailureCreatingResource(e))
+            Err(ApplicationError::FailureCreatingResource(
+                "
+                Failed to create new user"
+                    .to_string(),
+            ))
         }
     }
 }
 
-async fn check_unique_username(db: &PostgresDb, user: &User) -> Result<(), ApplicationError> {
+async fn check_unique_username<T: Db>(db: &T, user: &User) -> Result<(), ApplicationError> {
     match db.check_username(&user.username).await {
         Ok(count) => {
             if count == 0 {
@@ -42,6 +48,11 @@ async fn check_unique_username(db: &PostgresDb, user: &User) -> Result<(), Appli
                 ));
             }
         }
-        Err(err) => Err(ApplicationError::ResourceNotFound(err)),
+        Err(_) => {
+            error!("failed query to check if username exists");
+            Err(ApplicationError::ResourceNotFound(
+                "Failed to check user database".to_string(),
+            ))
+        }
     }
 }
