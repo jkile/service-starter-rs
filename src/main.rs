@@ -2,7 +2,7 @@ use std::thread;
 
 use dotenvy::dotenv;
 use peak_alloc::PeakAlloc;
-use persistence::postgres_db::postgres_db::PostgresDb;
+use persistence::postgres_db::PostgresDb;
 use tokio::signal;
 use tokio::task::AbortHandle;
 use tower_sessions_core::ExpiredDeletion;
@@ -28,6 +28,9 @@ async fn main() -> anyhow::Result<()> {
 
     let db = PostgresDb::new().await;
     let session_store = PostgresStore::new(db.conn_pool.clone());
+    if let Err(err) = session_store.migrate().await {
+        panic!("{}", err)
+    }
     let deletion_task = tokio::task::spawn(
         session_store
             .clone()

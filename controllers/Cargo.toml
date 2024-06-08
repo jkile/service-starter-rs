@@ -21,3 +21,4 @@ serde_json = { workspace = true }
 services = { path = "../services" }
 sqlx = { workspace = true }
 utils = { path = "../utils" }
+validator = { workspace = true }

@@ -22,6 +22,8 @@ pub enum ApplicationError {
     ResourceConflictError(String),
     #[error("Sql query failed: {0}")]
     SqlError(String),
+    #[error("Validation error: {0}")]
+    ValidationError(String),
 }
 
 #[derive(Serialize)]
@@ -62,6 +64,9 @@ impl IntoResponse for ApplicationError {
                 Json(ErrorResponse { message }),
             )
                 .into_response(),
+            ApplicationError::ValidationError(message) => {
+                (StatusCode::BAD_REQUEST, Json(ErrorResponse { message })).into_response()
+            }
         }
     }
 }

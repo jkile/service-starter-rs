@@ -15,15 +15,16 @@ use persistence::Db;
 use services::user_service;
 use sqlx::types::Uuid;
 use utils::error::ApplicationError;
+use validator::Validate;
 
 use crate::{require_login, AppState};
 
 pub fn collect_routes<T: Db + 'static>() -> Router<AppState<T>> {
     Router::new()
         .route("/", get(get_user))
+        .route("/logout", get(logout))
         .layer(middleware::from_fn(require_login::<T>))
         .route("/login", post(login))
-        .route("/logout", get(logout))
         .route("/signup", post(signup))
 }
 
@@ -41,6 +42,9 @@ async fn login<T: Db>(
     mut auth_session: AuthSession<T>,
     Form(credentials): Form<PasswordCredentials>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
+    credentials
+        .validate()
+        .map_err(|e| ApplicationError::ValidationError(e.to_string()))?;
     let user = match auth_session
         .authenticate(Credentials::Password(credentials))
         .await
@@ -85,6 +89,9 @@ async fn signup<T: Db>(
         None,
         Permission::from(PermissionType::User),
     );
+    user_to_create
+        .validate()
+        .map_err(|e| ApplicationError::ValidationError(e.to_string()))?;
     let user = user_service::create_user(&app_state.db, user_to_create).await;
     if let Err(err) = user {
         return Err(err);

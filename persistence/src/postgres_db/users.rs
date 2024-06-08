@@ -1,34 +1,42 @@
 use axum_login::axum::async_trait;
+use models::permissions::PermissionType;
 use models::users::{DbUser, User, UserId};
 use utils::error::ApplicationError;
 
 use crate::users::UsersTable;
 
-use super::postgres_db::PostgresDb;
+use super::PostgresDb;
 
 #[async_trait]
 impl UsersTable for PostgresDb {
     async fn get_user_by_id(&self, user_id: UserId) -> Result<User, ApplicationError> {
-        let row = sqlx::query_as::<_, DbUser>("SELECT * FROM users WHERE users.id = $1")
-            .bind(user_id)
-            .fetch_one(&self.conn_pool)
-            .await
-            .map_err(|e| ApplicationError::SqlError(e.to_string()))?;
+        let row = sqlx::query_as!(
+            DbUser,
+            r#"SELECT id, username, password, access_token,
+            permissions AS "permissions_type: PermissionType"
+            FROM users WHERE users.id = $1"#,
+            user_id
+        )
+        .fetch_one(&self.conn_pool)
+        .await
+        .map_err(|e| ApplicationError::SqlError(e.to_string()))?;
         Ok(row.into())
     }
 
     async fn create_user(&self, user: User) -> Result<User, ApplicationError> {
         let hashed_password = password_auth::generate_hash(user.password.unwrap().as_str());
-        let user = sqlx::query_as::<_, DbUser>(
-            "INSERT INTO users (id, username, password, access_token, permissions)
+        let user = sqlx::query_as!(
+            DbUser,
+            r#"INSERT INTO users (id, username, password, access_token, permissions)
             VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, username, password, access_token, permissions",
+            RETURNING id, username, password, access_token,
+            permissions AS "permissions_type: PermissionType""#,
+            user.id,
+            user.username,
+            hashed_password,
+            user.access_token,
+            user.permissions.permission_type as PermissionType
         )
-        .bind(user.id)
-        .bind(user.username)
-        .bind(hashed_password)
-        .bind(user.access_token)
-        .bind(user.permissions.permission_type)
         .fetch_one(&self.conn_pool)
         .await
         .map_err(|e| ApplicationError::SqlError(e.to_string()))?;

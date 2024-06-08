@@ -5,7 +5,7 @@ use thiserror::Error;
 use tokio::task;
 use utils::error::ApplicationError;
 
-use super::postgres_db::PostgresDb;
+use super::PostgresDb;
 
 #[derive(Debug, Error)]
 pub enum BackendError {

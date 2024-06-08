@@ -1,51 +1,74 @@
-// use std::io::Read;
+use std::borrow::BorrowMut;
 
-// use axum::{
-//     body::{to_bytes, Body},
-//     http::{Request, StatusCode},
-// };
-// use models::{
-//     permissions::Permission,
-//     users::{PasswordCredentials, UserExternal},
-// };
-// use persistence::postgres_db::postgres_db::PostgresDb;
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+};
 
-// use service_starter_rs::app;
-// use tower::ServiceExt;
-// use tower_sessions_sqlx_store::PostgresStore;
-// use uuid::Uuid;
+use persistence::postgres_db::PostgresDb;
 
-// #[tokio::test]
-// async fn singup_test() {
-//     // let user_to_create = PasswordCredentials {
-//     //     username: "testUser".to_string(),
-//     //     password: "testPass".to_string(),
-//     //     next: None,
-//     // };
-//     // let default_permissions = Permission::new("user".to_string());
-//     // let created_user = UserExternal::new(
-//     //     Uuid::new_v4(),
-//     //     user_to_create.username.clone(),
-//     //     default_permissions,
-//     // );
-//     // let db = PostgresDb::new().await;
-//     // let session_store = PostgresStore::new(db.conn_pool.clone());
-//     // let app = app(db, session_store);
-//     // let request = Request::builder()
-//     //     .uri("/api/users/signup")
-//     //     .method("POST")
-//     //     .header("Content-Type", "application/x-www-form-urlencoded")
-//     //     .body(Body::from(format!(
-//     //         "username={}&password={}",
-//     //         user_to_create.username, user_to_create.password
-//     //     )))
-//     //     .unwrap();
-//     // let response = app.oneshot(request).await.unwrap();
-//     // assert_eq!(response.status(), StatusCode::OK);
-//     // assert!(response.headers().contains_key("Set-Cookie"));
-//     // let res_body_bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
-//     // let res_body_slice: Vec<u8> = res_body_bytes.bytes().map(|b| b.unwrap()).collect();
-//     // let res_body_json: UserExternal = serde_json::from_slice(res_body_slice.as_slice()).unwrap();
-//     // assert_eq!(created_user.username, res_body_json.username);
-//     todo!()
-// }
+use service_starter_rs::app;
+use sqlx::PgPool;
+use tower::ServiceExt;
+use tower_sessions_sqlx_store::PostgresStore;
+
+use crate::common;
+
+#[sqlx::test(migrations = "./persistence/migrations")]
+async fn singup_test(pool: PgPool) {
+    let db = PostgresDb::from_pool(pool).await;
+    let session_store = PostgresStore::new(db.conn_pool.clone());
+    if let Err(err) = session_store.migrate().await {
+        panic!("{}", err)
+    }
+
+    let mut app = app(db, session_store);
+
+    // Happy path
+    let request_one = Request::builder()
+        .uri("/api/users/signup")
+        .method("POST")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(format!("username=testUser&password=testPass")))
+        .unwrap();
+
+    let response_one = app.borrow_mut().oneshot(request_one).await.unwrap();
+
+    assert_eq!(response_one.status(), StatusCode::OK);
+    assert!(response_one.headers().contains_key("Set-Cookie"));
+    let res_body_json = common::response_json(response_one).await;
+    assert_eq!("testUser", res_body_json["username"]);
+
+    // Invalid username
+    let request_two = Request::builder()
+        .uri("/api/users/signup")
+        .method("POST")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(format!("username=b&password=testPass")))
+        .unwrap();
+
+    let response_two = app.borrow_mut().oneshot(request_two).await.unwrap();
+    assert_eq!(response_two.status(), StatusCode::BAD_REQUEST);
+
+    // Invalid password
+    let request_three = Request::builder()
+        .uri("/api/users/signup")
+        .method("POST")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(format!("username=testUserTwo&password=t")))
+        .unwrap();
+
+    let response_three = app.borrow_mut().oneshot(request_three).await.unwrap();
+    assert_eq!(response_three.status(), StatusCode::BAD_REQUEST);
+
+    // Username is not unique
+    let request_four = Request::builder()
+        .uri("/api/users/signup")
+        .method("POST")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(format!("username=testUser&password=testPass")))
+        .unwrap();
+
+    let response_four = app.borrow_mut().oneshot(request_four).await.unwrap();
+    assert_eq!(response_four.status(), StatusCode::CONFLICT);
+}

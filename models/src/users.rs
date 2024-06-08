@@ -3,22 +3,22 @@ use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use std::fmt::Debug;
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::permissions::{Permission, PermissionType};
 
 // Used for internal typing and accessing sensitive data
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Validate)]
 pub struct User {
     pub id: UserId,
+    #[validate(length(min = 2, max = 255))]
     pub username: Username,
+    #[validate(length(min = 8, max = 255))]
     pub password: Option<String>,
     pub access_token: Option<String>,
     pub permissions: Permission,
 }
 
-// #[derive(Debug, Deserialize, Serialize, Clone, Copy, Hash, PartialEq, Eq, FromRow, sqlx::Type)]
-// #[sqlx(transparent)]
-// pub struct UserId(Uuid);
 pub type UserId = Uuid;
 pub type Username = String;
 pub type UserPermissionsList = Vec<Permission>;
@@ -37,7 +37,7 @@ pub struct DbUser {
     pub username: Username,
     pub password: Option<String>,
     pub access_token: Option<String>,
-    pub permissions: PermissionType,
+    pub permissions_type: PermissionType,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -45,31 +45,14 @@ pub enum Credentials {
     Password(PasswordCredentials),
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Validate)]
 pub struct PasswordCredentials {
+    #[validate(length(min = 2, max = 255))]
     pub username: String,
+    #[validate(length(min = 2, max = 255))]
     pub password: String,
     pub next: Option<String>,
 }
-
-// impl Display for UserId {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{}", self)
-//     }
-// }
-
-// impl Hash for UserId {
-//     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-//         self.0.hash(state);
-//     }
-// }
-
-// impl Deref for UserId {
-//     type Target = Uuid;
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
 
 impl User {
     pub fn new(
@@ -96,7 +79,7 @@ impl From<DbUser> for User {
             username: user.username,
             password: user.password,
             access_token: user.access_token,
-            permissions: Permission::from(user.permissions),
+            permissions: Permission::from(user.permissions_type),
         }
     }
 }
