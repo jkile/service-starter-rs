@@ -2,11 +2,12 @@ use std::thread;
 
 use dotenvy::dotenv;
 use peak_alloc::PeakAlloc;
-use persistence::postgres_db::PostgresDb;
+use persistence::libsql::LibsqlDb;
 use tokio::signal;
 use tokio::task::AbortHandle;
 use tower_sessions_core::ExpiredDeletion;
-use tower_sessions_sqlx_store::PostgresStore;
+use tower_sessions_libsql_store::LibsqlStore;
+// use tower_sessions_sqlx_store::PostgresStore;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -26,8 +27,8 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Initializing router...");
 
-    let db = PostgresDb::new().await;
-    let session_store = PostgresStore::new(db.conn_pool.clone());
+    let db = LibsqlDb::new().await;
+    let session_store = LibsqlStore::new(db.connection.clone());
     if let Err(err) = session_store.migrate().await {
         panic!("{}", err)
     }
@@ -43,7 +44,9 @@ async fn main() -> anyhow::Result<()> {
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
 
     info!("Router initialized, now listening on port {}", port);
-    profile_mem();
+    // if cfg!(debug_assertions) {
+    //     profile_mem();
+    // }
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal(deletion_task.abort_handle()))
@@ -77,13 +80,13 @@ async fn shutdown_signal(deletion_task_abort_handle: AbortHandle) {
     }
 }
 
-#[cfg(debug_assertions)]
-fn profile_mem() {
-    thread::spawn(|| loop {
-        let current_mem = PEAK_ALLOC.current_usage_as_mb();
-        info!("CURRENT ALLOCATION {} MB of RAM", current_mem);
-        let peak_mem = PEAK_ALLOC.peak_usage_as_mb();
-        info!("MAX LIFETIME ALLOCATION {} MB", peak_mem);
-        thread::sleep(std::time::Duration::from_secs(2));
-    });
-}
+// #[cfg(debug_assertions)]
+// fn profile_mem() {
+//     thread::spawn(|| loop {
+//         let current_mem = PEAK_ALLOC.current_usage_as_mb();
+//         info!("CURRENT ALLOCATION {} MB of RAM", current_mem);
+//         let peak_mem = PEAK_ALLOC.peak_usage_as_mb();
+//         info!("MAX LIFETIME ALLOCATION {} MB", peak_mem);
+//         thread::sleep(std::time::Duration::from_secs(2));
+//     });
+// }

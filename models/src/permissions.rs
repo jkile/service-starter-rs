@@ -35,3 +35,27 @@ impl From<PermissionsType> for Permission {
         Permission { permissions_type }
     }
 }
+
+impl From<String> for Permission {
+    fn from(string: String) -> Self {
+        Permission::new(string)
+    }
+}
+
+impl std::fmt::Display for PermissionsType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl From<String> for PermissionsType {
+    fn from(string: String) -> PermissionsType {
+        match string.as_str() {
+            "super_admin" => PermissionsType::SuperAdmin,
+            "admin" => PermissionsType::Admin,
+            "user" => PermissionsType::User,
+            // Default to lowest permission
+            _ => PermissionsType::User,
+        }
+    }
+}

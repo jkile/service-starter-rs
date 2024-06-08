@@ -16,6 +16,7 @@ dotenvy = { version = "0.15.7" }
 http = { version = "1.0.0" }
 futures-util = { version = "0.3.30" }
 jsonwebtoken = { version = "9.0" }
+libsql = { version = "0.3.5", features = [] }
 notify = { version = "6.1.1" }
 password-auth = "1.0.0"
 persistence = { path = "./persistence" }
@@ -40,6 +41,7 @@ tower-http = { version = "0.5.1", features = [
     "compression-gzip",
 ] }
 tower-sessions-core = { version = "0.12.1", features = ["deletion-task"] }
+tower-sessions-libsql-store = { version = "0.2.1" }
 tower-sessions-sqlx-store = { version = "0.12.0", features = ["postgres"] }
 tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
@@ -54,6 +56,7 @@ axum-login = { workspace = true }
 bytes = { workspace = true }
 controllers = { path = "./controllers" }
 dotenvy = { workspace = true }
+libsql = { workspace = true }
 models = { path = "./models" }
 notify = { workspace = true }
 password-auth = { workspace = true }
@@ -66,6 +69,7 @@ tokio = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
 tower-sessions-core = { workspace = true }
+tower-sessions-libsql-store = { workspace = true }
 tower-sessions-sqlx-store = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

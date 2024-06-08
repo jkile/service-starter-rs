@@ -3,6 +3,8 @@ use models::users::{Credentials, User};
 use users::UsersTable;
 
 pub mod auth;
+pub mod libsql;
+#[cfg(postgres)]
 pub mod postgres_db;
 pub mod users;
 

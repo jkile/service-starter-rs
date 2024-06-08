@@ -10,12 +10,14 @@ path = "src/lib.rs"
 [dependencies]
 axum-login = { workspace = true }
 thiserror = { workspace = true }
+libsql = { workspace = true }
 models = { path = "../models" }
 password-auth = { workspace = true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tower-sessions-core = { workspace = true }
+tower-sessions-libsql-store = { workspace = true }
 tower-sessions-sqlx-store = { workspace = true }
 utils = { path = "../utils" }
 uuid = { workspace = true }

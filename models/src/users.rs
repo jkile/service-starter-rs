@@ -31,13 +31,13 @@ pub struct UserExternal {
     pub permissions: Permission,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Deserialize)]
 pub struct DbUser {
-    pub id: UserId,
+    pub id: String,
     pub username: Username,
     pub password: Option<String>,
     pub access_token: Option<String>,
-    pub permissions_type: PermissionsType,
+    pub permissions_type: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -75,7 +75,7 @@ impl User {
 impl From<DbUser> for User {
     fn from(user: DbUser) -> User {
         User {
-            id: user.id,
+            id: Uuid::parse_str(&user.id.as_str()).unwrap(),
             username: user.username,
             password: user.password,
             access_token: user.access_token,

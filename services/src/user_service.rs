@@ -48,8 +48,8 @@ async fn check_unique_username<T: Db>(db: &T, user: &User) -> Result<(), Applica
                 ));
             }
         }
-        Err(_) => {
-            error!("failed query to check if username exists");
+        Err(err) => {
+            error!("failed query to check if username exists: {}", err);
             Err(ApplicationError::ResourceNotFound(
                 "Failed to check user database".to_string(),
             ))

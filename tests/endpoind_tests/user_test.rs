@@ -5,19 +5,22 @@ use axum::{
     http::{Request, StatusCode},
 };
 
-use persistence::postgres_db::PostgresDb;
+// use persistence::postgres_db::PostgresDb;
 
+use persistence::libsql::LibsqlDb;
 use service_starter_rs::app;
 use sqlx::PgPool;
 use tower::ServiceExt;
+use tower_sessions_libsql_store::LibsqlStore;
 use tower_sessions_sqlx_store::PostgresStore;
 
 use crate::common;
 
-#[sqlx::test(migrations = "./persistence/migrations")]
-async fn singup_test(pool: PgPool) {
-    let db = PostgresDb::from_pool(pool).await;
-    let session_store = PostgresStore::new(db.conn_pool.clone());
+// #[sqlx::test(migrations = "./persistence/migrations")]
+#[tokio::test]
+async fn singup_test() {
+    let db = LibsqlDb::new().await;
+    let session_store = LibsqlStore::new(db.connection.clone());
     if let Err(err) = session_store.migrate().await {
         panic!("{}", err)
     }
