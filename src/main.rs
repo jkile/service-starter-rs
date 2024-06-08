@@ -1,4 +1,3 @@
-use dotenvy::dotenv;
 use persistence::postgres_db::PostgresDb;
 use tokio::signal;
 use tokio::task::AbortHandle;
@@ -9,7 +8,6 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
-    dotenv().unwrap();
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
