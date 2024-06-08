@@ -1,0 +1,57 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, username, password, access_token,\n            permissions_type AS \"permissions_type: PermissionsType\"\n            FROM users WHERE users.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "password",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "access_token",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "permissions_type: PermissionsType",
+        "type_info": {
+          "Custom": {
+            "name": "permissions_type",
+            "kind": {
+              "Enum": [
+                "user",
+                "admin",
+                "super_admin"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "321f8aba2f34add2dab4ddfca6475bee48708894edfcb5a392057d64bce362a9"
+}

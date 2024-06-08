@@ -72,4 +72,3 @@ tracing-subscriber = { workspace = true }
 utils = { path = "./utils" }
 uuid = { workspace = true }
 validator = { workspace = true }
-peak_alloc = "0.2.1"
