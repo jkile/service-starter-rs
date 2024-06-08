@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS users (
     username varchar(20) NOT NULL,
     password varchar(255) NOT NULL,
     access_token varchar(255),
-    permissions permissions_type DEFAULT 'user' NOT NULL
+    permissions_type permissions_type DEFAULT 'user' NOT NULL
 );

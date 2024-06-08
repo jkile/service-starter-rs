@@ -8,7 +8,7 @@ use axum::{
 };
 use axum_login::AuthSession;
 use models::{
-    permissions::{Permission, PermissionType},
+    permissions::{Permission, PermissionsType},
     users::{Credentials, PasswordCredentials, User, UserExternal},
 };
 use persistence::Db;
@@ -81,13 +81,16 @@ async fn signup<T: Db>(
     mut auth_session: AuthSession<T>,
     Form(credentials): Form<PasswordCredentials>,
 ) -> Result<Json<UserExternal>, ApplicationError> {
+    credentials
+        .validate()
+        .map_err(|e| ApplicationError::ValidationError(e.to_string()))?;
     let user_id = Uuid::new_v4();
     let user_to_create = User::new(
         user_id,
         credentials.username.clone(),
         Some(credentials.password.clone()),
         None,
-        Permission::from(PermissionType::User),
+        Permission::from(PermissionsType::User),
     );
     user_to_create
         .validate()

@@ -1,5 +1,5 @@
 use axum_login::axum::async_trait;
-use models::permissions::PermissionType;
+use models::permissions::PermissionsType;
 use models::users::{DbUser, User, UserId};
 use utils::error::ApplicationError;
 
@@ -13,7 +13,7 @@ impl UsersTable for PostgresDb {
         let row = sqlx::query_as!(
             DbUser,
             r#"SELECT id, username, password, access_token,
-            permissions AS "permissions_type: PermissionType"
+            permissions_type AS "permissions_type: PermissionsType"
             FROM users WHERE users.id = $1"#,
             user_id
         )
@@ -27,15 +27,15 @@ impl UsersTable for PostgresDb {
         let hashed_password = password_auth::generate_hash(user.password.unwrap().as_str());
         let user = sqlx::query_as!(
             DbUser,
-            r#"INSERT INTO users (id, username, password, access_token, permissions)
+            r#"INSERT INTO users (id, username, password, access_token, permissions_type)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING id, username, password, access_token,
-            permissions AS "permissions_type: PermissionType""#,
+            permissions_type AS "permissions_type: PermissionsType""#,
             user.id,
             user.username,
             hashed_password,
             user.access_token,
-            user.permissions.permission_type as PermissionType
+            user.permissions.permissions_type as PermissionsType
         )
         .fetch_one(&self.conn_pool)
         .await

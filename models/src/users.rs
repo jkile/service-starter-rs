@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::permissions::{Permission, PermissionType};
+use crate::permissions::{Permission, PermissionsType};
 
 // Used for internal typing and accessing sensitive data
 #[derive(Deserialize, Serialize, Clone, Validate)]
@@ -37,7 +37,7 @@ pub struct DbUser {
     pub username: Username,
     pub password: Option<String>,
     pub access_token: Option<String>,
-    pub permissions_type: PermissionType,
+    pub permissions_type: PermissionsType,
 }
 
 #[derive(Debug, Clone, Deserialize)]
