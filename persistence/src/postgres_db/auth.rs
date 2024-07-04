@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use axum_login::{axum::async_trait, AuthnBackend};
 use models::users::{Credentials, DbUser, User, UserId};
 use password_auth::verify_password;
@@ -30,7 +32,7 @@ impl AuthnBackend for PostgresDb {
                     "SELECT * FROM users WHERE username = $1 AND password IS NOT NULL",
                 )
                 .bind(password_cred.username)
-                .fetch_one(&self.conn_pool)
+                .fetch_one(self.deref())
                 .await
                 .map_err(Self::Error::Sqlx);
                 let converted_user: Option<User> = match user {
@@ -57,7 +59,7 @@ impl AuthnBackend for PostgresDb {
     async fn get_user(&self, user_id: &UserId) -> Result<Option<User>, Self::Error> {
         let row = sqlx::query_as::<_, DbUser>("SELECT * FROM users WHERE users.id = $1")
             .bind(user_id)
-            .fetch_one(&self.conn_pool)
+            .fetch_one(self.deref())
             .await
             .map_err(Self::Error::Sqlx);
         if let Ok(user) = row {

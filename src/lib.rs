@@ -46,7 +46,7 @@ pub fn app<T: Db + 'static>(db: T, session_store: impl SessionStore + Clone) -> 
                             request
                                 .headers()
                                 .iter()
-                                .filter(|header| header.0 != COOKIE)
+                                .filter(|header| header.0 != COOKIE && header.0 != AUTHORIZATION)
                                 .collect::<Vec<(&HeaderName, &HeaderValue)>>()
                         ),
                         request_id = tracing::field::display(request_id)

@@ -1,5 +1,6 @@
 FROM lukemathwalker/cargo-chef:latest as chef
 WORKDIR /app
+EXPOSE 8080
 
 FROM chef AS planner
 COPY . ./

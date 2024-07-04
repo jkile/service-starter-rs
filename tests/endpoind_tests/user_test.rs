@@ -1,4 +1,4 @@
-use std::borrow::BorrowMut;
+use std::{borrow::BorrowMut, ops::Deref};
 
 use axum::{
     body::Body,
@@ -17,7 +17,7 @@ use crate::common;
 #[sqlx::test(migrations = "./persistence/migrations")]
 async fn singup_test(pool: PgPool) {
     let db = PostgresDb::from_pool(pool).await;
-    let session_store = PostgresStore::new(db.conn_pool.clone());
+    let session_store = PostgresStore::new(db.deref().clone());
     if let Err(err) = session_store.migrate().await {
         panic!("{}", err)
     }

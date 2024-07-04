@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use persistence::postgres_db::PostgresDb;
 use tokio::signal;
 use tokio::task::AbortHandle;
@@ -19,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Initializing router...");
 
     let db = PostgresDb::new().await;
-    let session_store = PostgresStore::new(db.conn_pool.clone());
+    let session_store = PostgresStore::new(db.deref().clone());
     if let Err(err) = session_store.migrate().await {
         panic!("{}", err)
     }

@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use axum_login::axum::async_trait;
 use models::permissions::PermissionsType;
 use models::users::{DbUser, User, UserId};
@@ -17,7 +19,7 @@ impl UsersTable for PostgresDb {
             FROM users WHERE users.id = $1"#,
             user_id
         )
-        .fetch_one(&self.conn_pool)
+        .fetch_one(self.deref())
         .await
         .map_err(|e| ApplicationError::SqlError(e.to_string()))?;
         Ok(row.into())
@@ -37,7 +39,7 @@ impl UsersTable for PostgresDb {
             user.access_token,
             user.permissions.permissions_type as PermissionsType
         )
-        .fetch_one(&self.conn_pool)
+        .fetch_one(self.deref())
         .await
         .map_err(|e| ApplicationError::SqlError(e.to_string()))?;
         Ok(user.into())
@@ -46,7 +48,7 @@ impl UsersTable for PostgresDb {
     async fn check_username(&self, username: &String) -> Result<i64, ApplicationError> {
         let user_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE username = $1")
             .bind(username)
-            .fetch_one(&self.conn_pool)
+            .fetch_one(self.deref())
             .await
             .map_err(|e| ApplicationError::SqlError(e.to_string()))?;
         Ok(user_count)

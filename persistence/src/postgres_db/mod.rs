@@ -2,16 +2,23 @@ pub mod auth;
 pub mod users;
 
 use sqlx::{postgres::PgPoolOptions, PgPool, Pool, Postgres};
-use std::time::Duration;
+use std::{ops::Deref, time::Duration};
 use tracing::instrument;
 
 use crate::Db;
 
-impl Db for PostgresDb {}
+impl Db for PostgresDb {
+    // type Inner<'a> = Self where Self: 'a;
+}
 
 #[derive(Debug, Clone)]
-pub struct PostgresDb {
-    pub conn_pool: Pool<Postgres>,
+pub struct PostgresDb(Pool<Postgres>);
+
+impl Deref for PostgresDb {
+    type Target = Pool<Postgres>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl PostgresDb {
@@ -27,10 +34,10 @@ impl PostgresDb {
             .await
             .expect("connection to database failed");
         sqlx::migrate!().run(&pool).await.unwrap();
-        PostgresDb { conn_pool: pool }
+        PostgresDb(pool)
     }
 
     pub async fn from_pool(pool: PgPool) -> PostgresDb {
-        PostgresDb { conn_pool: pool }
+        PostgresDb(pool)
     }
 }
